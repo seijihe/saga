@@ -1,0 +1,182 @@
+# commands:
+# docker compose up --build -d
+# docker compose down
+
+name: orchestrator-saga
+
+services:
+  order-db: # docker exec -it order-db mongosh "mongodb://user:password@localhost:port"
+    image: mongo:latest
+    container_name: order-db
+    restart: always
+    networks:
+      - orchestrator-saga
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongo
+      MONGO_INITDB_ROOT_PASSWORD: mongo
+    ports:
+      - 27017:27017
+  
+  product-db: # Connect via DBeaver
+    image: postgres:latest
+    container_name: product-db
+    networks:
+      - orchestrator-saga
+    environment:
+      POSTGRES_DB: product-db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - 5432:5432
+
+  payment-db:
+    image: postgres:latest
+    container_name: payment-db
+    networks:
+      - orchestrator-saga
+    environment:
+      POSTGRES_DB: payment-db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - 5433:5432
+
+  inventory-db:
+    image: postgres:latest
+    container_name: inventory-db
+    networks:
+      - orchestrator-saga
+    environment:
+      POSTGRES_DB: inventory-db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - 5434:5432
+
+  kafka:
+    image: apache/kafka:latest
+    container_name: kafka
+    restart: no
+    ports:
+      - 9092:9092
+    networks:
+      - orchestrator-saga
+    environment: # INTERNAL: clients communicating inside Docker newtork , EXTERNAL: clients outside docker network
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:29093"
+      KAFKA_LISTENERS: "INTERNAL://:29092,EXTERNAL://:9092,CONTROLLER://:29093" #  Ports that Kafka actually opens and listens on
+      KAFKA_ADVERTISED_LISTENERS: "INTERNAL://kafka:29092,EXTERNAL://localhost:9092" #  Port that the Kafka broker reports back to clients in its cluster metadata
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "INTERNAL"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+    volumes:
+      - ./data/kafka/data:/var/lib/kafka/data
+
+  redpanda-console: # localhost:8081/topics
+    image: docker.redpanda.com/redpandadata/console:v3.14.0
+    restart: on-failure
+    entrypoint: /bin/sh
+    command: -c "echo \"$$CONSOLE_CONFIG_FILE\" > /tmp/config.yml; /app/console"
+    ports:
+      - "8081:8080"
+    networks:
+      - orchestrator-saga
+    environment:
+      CONFIG_FILEPATH: /tmp/config.yml
+      CONSOLE_CONFIG_FILE: |
+        kafka:
+          brokers: ["kafka:29092"]
+    depends_on: # Starts Kafka first, but does not wait for readiness
+      - "kafka"
+  
+  order-service: # docker logs --follow order-service
+    build: ./order-service
+    container_name: order-service
+    depends_on:
+      - order-db
+      - kafka
+    networks:
+      - orchestrator-saga
+    environment:
+      KAFKA_BROKER: kafka:29092 # Attached at Docker Internal Network
+      MONGO_DB_URI: mongodb
+      MONGO_DB_USER: mongo
+      MONGO_DB_PASSWORD: mongo
+      MONGO_DB_HOST: order-db # Attached at Docker Internal Network
+      MONGO_DB_PORT: 27017
+    ports:
+      - 3000:3000
+  
+  orchestrator-service:
+    build: ./orchestrator-service
+    container_name: orchestrator-service
+    depends_on:
+      - kafka
+    networks:
+      - orchestrator-saga
+    environment:
+      KAFKA_BROKER: kafka:29092
+    ports:
+      - 8080:8080
+  
+  product-validation-service:
+    build: ./product-validation-service
+    container_name: product-validation-service
+    depends_on:
+      - product-db
+      - kafka
+    networks:
+      - orchestrator-saga
+    environment:
+      KAFKA_BROKER: kafka:29092
+      DB_HOST: product-db
+      DB_PORT: 5432
+      DB_NAME: product-db
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+    ports:
+      - 8090:8090
+
+  payment-service:
+    build: ./payment-service
+    container_name: payment-service
+    depends_on:
+      - payment-db
+      - kafka
+    networks:
+      - orchestrator-saga
+    environment:
+      KAFKA_BROKER: kafka:29092
+      DB_HOST: payment-db
+      DB_PORT: 5432
+      DB_NAME: payment-db
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+    ports:
+      - 8091:8091
+  
+  inventory-service:
+    build: ./inventory-service
+    container_name: inventory-service
+    depends_on:
+      - inventory-db
+      - kafka
+    networks:
+      - orchestrator-saga
+    environment:
+      KAFKA_BROKER: kafka:29092
+      DB_HOST: inventory-db
+      DB_PORT: 5432
+      DB_NAME: inventory-db
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+    ports:
+      - 8092:8092
+
+networks:
+  orchestrator-saga:
+    driver: bridge

@@ -1,0 +1,30 @@
+data/
+
+# inventory-service
+inventory-service/.gradle
+inventory-service/bin
+inventory-service/build
+
+# orchestrator-service
+orchestrator-service/.gradle
+orchestrator-service/bin
+orchestrator-service/build
+
+# order-service
+order-service/.gradle
+order-service/bin
+order-service/build
+
+# payment-service
+payment-service/.gradle
+payment-service/bin
+payment-service/build
+
+# product-validation-service
+product-validation-service/.gradle
+product-validation-service/bin
+product-validation-service/build
+
+
+
+

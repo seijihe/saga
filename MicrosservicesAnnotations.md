@@ -185,6 +185,21 @@ O que é o Apache Kafka?
     - Producer: componente responsável por publicar (produzir) eventos em um ou mais tópicos `(por exemplo, dados de produtos)`.
     - Consumer: componente responsável por consumir eventos de um ou mais tópicos e processá-los de acordo com a lógica de negócio do sistema `(por exemplo, consumir eventos do tópico Atualizar Produto)`.
     - Consumer Group: conjunto de consumidores que trabalham em conjunto para consumir eventos de um ou mais tópicos, de forma coordenada, permitindo maior escalabilidade e tolerância a falhas na leitura de eventos do Kafka `(por exemplo, se cinco tipos de microsserviço consumirem dados de um tópico, poderão existir cinco Consumer Groups)`.
+    - Broker: servidor Kafka responsável por armazenar mensagens e atender producers e consumers
+    - Partições e réplicas: partições dividem um tópico, enquanto réplicas mantêm cópias das partições em diferentes nós do cluster (por exemplo, em VMs ou contêineres).
+        - Partições: permitem distribuir e paralelizar o processamento. Por exemplo, com duas partições, consumidores de um mesmo grupo podem processar eventos de ambas em paralelo, em vez de processá-los todos sequencialmente:
+            - Broker 01:  
+                - Partition 1 for Topic T
+                - Partition 2 for Topic T
+        - Réplicas: são cópias de uma partição armazenadas em diferentes nós (brokers) de um cluster Kafka. Elas são usadas para garantir redundância.
+            - Broker 01:  
+                - Partition 1 for Topic T
+                - Partition 2 for Topic T 
+            - Broker 02:  
+                - Partition 1 for Topic T
+                - Partition 2 for Topic T
+    - Em um mesmo Consumer Group, cada partição é atribuída a, no máximo, um consumidor por vez.
+    - Outro cenário para reforçar a ideia: temos quatro partições (Partition 01, 02, 03 e 04) e dois consumidores (Consumer 01 e 02). Cada consumidor pode receber eventos de duas partições. As partições não ficam necessariamente sem atividade; a distribuição dos eventos depende das chaves e da atribuição das partições aos consumidores.
     - Offset: posição de um evento dentro de uma partição do tópico. Por exemplo, considere três Consumer Groups:
         - Evento 01:
             1. Evento registrado no offset 0 do Consumer Group 01
@@ -198,22 +213,8 @@ O que é o Apache Kafka?
     - Há duas opções comuns para definir o ponto inicial de consumo:
         - Earliest: começa pelo evento mais antigo disponível, permitindo reprocessar os eventos desde o início da retenção.
         - Latest: começa pelos eventos novos, publicados após o início do consumo.
-    
-    - Partições e réplicas: partições dividem um tópico, enquanto réplicas mantêm cópias das partições em diferentes nós do cluster (por exemplo, em VMs ou contêineres).
-        - Partições: permitem distribuir e paralelizar o processamento. Por exemplo, com duas partições, consumidores de um mesmo grupo podem processar eventos de ambas em paralelo, em vez de processá-los todos sequencialmente:
-            - Broker 01:  
-                - Partition 1 for Topic T
-                - Partition 2 for Topic T
-        - Réplicas: são cópias de uma partição armazenadas em diferentes nós (brokers) de um cluster Kafka. Elas são usadas para garantir redundância.
-            - Broker 01:  
-                - Partition 1 for Topic T
-                - Partition 2 for Topic T 
-            - Broker 02:  
-                - Partition 1 for Topic T
-                - Partition 2 for Topic T 
 
-    - Em um mesmo Consumer Group, cada partição é atribuída a, no máximo, um consumidor por vez.
-    - Outro cenário para reforçar a ideia: temos quatro partições (Partition 01, 02, 03 e 04) e dois consumidores (Consumer 01 e 02). Cada consumidor pode receber eventos de duas partições. As partições não ficam necessariamente sem atividade; a distribuição dos eventos depende das chaves e da atribuição das partições aos consumidores.
+    
 
 Idempotência:
 - É uma propriedade de operações que podem ser repetidas várias vezes sem causar efeitos adicionais. Por exemplo, em HTTP, o método PUT é idempotente; o POST, em geral, não é.
@@ -352,6 +353,34 @@ Agora, repetimos essa mesma lógica para o Payment Service e o Inventory Service
 Notas:
 - O tópico "orchestrator" recebe os retornos dos microsserviços para o orquestrador.
 - Os tópicos "finish-success" e "finish-fail" são produzidos e consumidos pelo orquestrador.
+
+```mermaid
+flowchart LR
+    Order["Order Service"]
+    Saga["Saga Orchestrator"]
+    Product["Product Validation Service"]
+    Payment["Payment Service"]
+    Inventory["Inventory Service"]
+
+    Order -->|start-saga| Saga
+    Saga -->|notify-ending| Order
+
+    Saga -->|finish-success| Saga
+    Saga -->|finish-fail| Saga
+
+    Product -->|orchestrator| Saga
+    Payment -->|orchestrator| Saga
+    Inventory -->|orchestrator| Saga
+
+    Saga -->|product-validation-success| Product
+    Saga -->|product-validation-fail| Product
+
+    Saga -->|payment-success| Payment
+    Saga -->|payment-fail| Payment
+
+    Saga -->|inventory-success| Inventory
+    Saga -->|inventory-fail| Inventory
+```
 
 ---
 

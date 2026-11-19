@@ -1,21 +1,22 @@
 package com.seiji.orchestrator_service.config.kafka;
 
+import static com.seiji.orchestrator_service.application.core.domain.enums.ETopics.BASE_ORCHESTRATOR;
+import static com.seiji.orchestrator_service.application.core.domain.enums.ETopics.FINISH_FAIL;
+import static com.seiji.orchestrator_service.application.core.domain.enums.ETopics.FINISH_SUCESS;
+import static com.seiji.orchestrator_service.application.core.domain.enums.ETopics.INVENTORY_FAIL;
+import static com.seiji.orchestrator_service.application.core.domain.enums.ETopics.INVENTORY_SUCESS;
+import static com.seiji.orchestrator_service.application.core.domain.enums.ETopics.NOTIFY_ENDING;
+import static com.seiji.orchestrator_service.application.core.domain.enums.ETopics.PAYMENT_FAIL;
+import static com.seiji.orchestrator_service.application.core.domain.enums.ETopics.PAYMENT_SUCESS;
+import static com.seiji.orchestrator_service.application.core.domain.enums.ETopics.PRODUCT_VALIDATION_FAIL;
+import static com.seiji.orchestrator_service.application.core.domain.enums.ETopics.PRODUCT_VALIDATION_SUCESS;
+import static com.seiji.orchestrator_service.application.core.domain.enums.ETopics.START_SAGA;
+
 import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.TopicBuilder;
-import static com.seiji.orchestrator_service.core.enums.ETopics.START_SAGA;
-import static com.seiji.orchestrator_service.core.enums.ETopics.NOTIFY_ENDING;
-import static com.seiji.orchestrator_service.core.enums.ETopics.BASE_ORCHESTRATOR;
-import static com.seiji.orchestrator_service.core.enums.ETopics.FINISH_SUCESS;
-import static com.seiji.orchestrator_service.core.enums.ETopics.FINISH_FAIL;
-import static com.seiji.orchestrator_service.core.enums.ETopics.PRODUCT_VALIDATION_SUCESS;
-import static com.seiji.orchestrator_service.core.enums.ETopics.PRODUCT_VALIDATION_FAIL;
-import static com.seiji.orchestrator_service.core.enums.ETopics.PAYMENT_SUCESS;
-import static com.seiji.orchestrator_service.core.enums.ETopics.PAYMENT_FAIL;
-import static com.seiji.orchestrator_service.core.enums.ETopics.INVENTORY_SUCESS;
-import static com.seiji.orchestrator_service.core.enums.ETopics.INVENTORY_FAIL;
 
 @Configuration 
 public class KafkaConfig {

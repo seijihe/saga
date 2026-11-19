@@ -1,4 +1,4 @@
-package com.seiji.orchestrator_service.core.enums;
+package com.seiji.orchestrator_service.application.core.domain.enums;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -22,5 +22,9 @@ public enum ETopics {
     INVENTORY_FAIL("inventory-fail");
     
     private String topic;
+
+    public String getTopic() {
+        return this.topic;
+    }
     
 }

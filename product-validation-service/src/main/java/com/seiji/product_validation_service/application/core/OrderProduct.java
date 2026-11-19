@@ -1,0 +1,29 @@
+package com.seiji.product_validation_service.application.core;
+
+public class OrderProduct {
+    
+    private Product product;
+    private Integer quantity;
+
+    public OrderProduct(Product product, Integer quantity) {
+        this.product = product;
+        this.quantity = quantity;
+    }
+
+    public Product getProduct() {
+        return product;
+    }
+
+    public void setProduct(Product product) {
+        this.product = product;
+    }
+
+    public Integer getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(Integer quantity) {
+        this.quantity = quantity;
+    }
+
+}

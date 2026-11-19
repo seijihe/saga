@@ -12,7 +12,7 @@ def build_application(app):
 
 
 def docker_compose_up():
-    print("Running containers!")
+    print("Running containers! Wait until terminal return...")
     os.popen("docker-compose up --build -d").read()
     print("Pipeline finished!")
 
